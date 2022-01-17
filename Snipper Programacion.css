@@ -299,7 +299,7 @@
 		Url:
 		Observation:
 		/*
-			{{servicioSolicitado.createdAt | date: 'dd/MM/yyyy HH:mm:ss':"+0000"}}
+			{servicioSolicitado.createdAt | date: 'dd/MM/yyyy HH:mm:ss':"+0000"}
 		*/
 	}
 
@@ -504,8 +504,6 @@
 }
 
 ---------------------- C# ---------------------------{
-	
-	Update-Package -reinstall
 	
 	--APPLICATION_POOL{
 		/*
@@ -815,6 +813,140 @@
 
 				return (list);
 			}
+		*/
+	}
+	
+	--Excel_Modelo_Reutilizable{
+		/*
+			using CapiWeb.Models.Report;
+			using OfficeOpenXml;
+			using System;
+			using System.Collections.Generic;
+			using System.ComponentModel.DataAnnotations;
+			using System.Data;
+			using System.Data.Entity.Infrastructure;
+			using System.Data.Entity.Validation;
+			using System.Data.SqlClient;
+			using System.IO;
+			using System.Linq;
+			using System.Reflection;
+			using System.Text;
+
+			namespace CapiWeb.Models.Operativo
+			{
+				
+				public class MyPropertyExcel
+				{
+					public string PathFileName { get; set; }
+					public string NombreHojaTrabajo { get; set; }
+					public string HeaderFooter { get; set; }
+					public string Title { get; set; }
+					public string Author { get; set; }
+					public string Company { get; set; }
+
+					public MyPropertyExcel(string PathFileName, string NombreHojaTrabajo, string HeaderFooter, string Title, string Author, string Company)
+					{
+						this.PathFileName = PathFileName;
+						this.NombreHojaTrabajo = NombreHojaTrabajo;
+						this.HeaderFooter = HeaderFooter;
+						this.Title = Title;
+						this.Author = Author;
+						this.Company = Company;
+					}
+
+					public static string ArmaProcesoExcel(IQueryable OverridedataQuery, string Proceso, string[] ExcluirCampos, string[] ExcluirTipos)
+					{
+						var db2 = new CAPINETEntities();
+						string PathFisico = Path.Combine(db2.PathsCapiweb.FirstOrDefault(x => x.ID == 4).Path, "Export");
+						string PathWeb = Path.Combine(db2.PathsCapiweb.FirstOrDefault(x => x.ID == 2).Path, "RecursosPath/Export");
+
+						var NombreArchivo = GetCodigoUnico(Proceso) + ".xlsx";
+
+						var PathWebCompleto = Path.Combine(PathWeb, NombreArchivo);
+						MyPropertyExcel MyProperties = new MyPropertyExcel(
+							Path.Combine(PathFisico, NombreArchivo),
+							Proceso,
+							"HeaderFooter",
+							"Titulo de mi archivo",
+							"CapiwebApp",
+							"Syspotec"
+							);
+						//--> 0x -: configurar un diccionario con algunos campos y tipos que se desea excluir y no exportar a excel.
+						//string[] ExcluirCampos = new[] { "RutaParaPromedio", "RutaTiempo", };
+						//string[] ExcluirTipos = new string[] { "List`1", "HttpPostedFileWrapper", "Nullable`1[]", "otraclase" };
+						//string[] ExcluirCampos = new[] { "" };
+						//string[] ExcluirTipos = new string[] { "" };
+						Dictionary<string, string[]> FileNotMaped = new Dictionary<string, string[]>() {
+							 { "Campos", ExcluirCampos },{ "Types",ExcluirTipos }
+						 };
+						//--> 0x -: Exportar a Excel
+						MyPropertyExcel.GenerarExcel(OverridedataQuery, MyProperties, FileNotMaped);
+						return  PathWebCompleto;
+					}
+
+
+					public static void GenerarExcel(IQueryable dataQuery, MyPropertyExcel PropertyExcel, Dictionary<string, string[]> NoMapear)
+					{
+						//03)--Generar Excel combinando los dos diccionarios de datos.
+						using (ExcelPackage package = new ExcelPackage())
+						{
+							ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(PropertyExcel.NombreHojaTrabajo);
+							//01)-Agregar Estilo al Libro --Add some formatting to the worksheet
+							worksheet.DefaultRowHeight = 14;
+							worksheet.HeaderFooter.FirstFooter.LeftAlignedText = PropertyExcel.HeaderFooter;
+
+							//02)-Empezar a llenar el contenido
+							var fila = 1;
+							foreach (var ifilas in dataQuery)
+							{
+								var columna = 1;
+								//03)-Detectar propiedades de la fila
+								IEnumerable<PropertyInfo> tmpProp = ifilas.GetType().GetProperties()
+												.Where(x => (!NoMapear["Campos"].Contains(x.Name) &&
+															 !NoMapear["Types"].Contains(x.PropertyType.Name)) &&
+															 !(x.Name == x.PropertyType.Name)
+															 );
+								if (fila == 1)
+								{
+									var columnatmp = 1;
+									foreach (PropertyInfo property in tmpProp.ToArray())
+									{
+										worksheet.Cells[fila, columnatmp].Value = property.Name;
+										columnatmp++;
+									}
+									fila++;
+								}
+								//05)-Llenar los datos
+								foreach (PropertyInfo property in tmpProp.ToArray())
+								{
+									object value = ifilas.GetType().GetProperty(property.Name).GetValue(ifilas, null);
+									worksheet.Cells[fila, columna].Value = value != null ? value.ToString() : "";
+									columna++;
+								}
+								fila++;
+							}
+							//06)- Auntoajustar columnas
+							worksheet.Cells["A:XFD"].AutoFitColumns();
+
+							//07)- Crear algunas propiedades para el archivo.
+							package.Workbook.Properties.Title = PropertyExcel.Title;
+							package.Workbook.Properties.Author = PropertyExcel.Author;
+							package.Workbook.Properties.Company = PropertyExcel.Company;
+
+							byte[] ArchivoByte = package.GetAsByteArray();
+							// save our new workbook and we are done!
+							System.IO.File.WriteAllBytes(PropertyExcel.PathFileName, ArchivoByte);
+						}
+					}
+
+					public static string GetCodigoUnico(string CodigoID)
+					{
+						string CodigoUnico = DateTime.Now.ToString("yyyyMMddHHmmss_fff") + "_" + CodigoID + "_" + Path.GetRandomFileName().PadLeft(11).Replace('.', '_');
+						return CodigoUnico;
+					}
+				}
+			}
+
 		*/
 	}
 	
@@ -2760,6 +2892,22 @@
 }
 
 ---------------------- IONIC ------------------------{
+	ANROID_STUDIO{
+		Error: Aparece error de location de compilar en adnroid studio, estas lineas se agregan en 
+		gradle.build, dentro de dependencies => ultima linea
+		url: https://stackoverflow.com/questions/70166663/could-not-get-play-services-location-maven-metadata-xml-received-status-code/70328207#70328207
+		Observation: 
+		/*
+			constraints {
+				implementation('com.google.android.gms:play-services-location') {
+					version {
+						strictly "16.0.0"
+					}
+					because 'location: 3.2.4 does not specify version & google.bintray.com answers 502 Bad Gateway'
+				}
+			}
+		*/
+	}
 	
 	GENERATE{
 		FUENTE: IONIC
@@ -3492,6 +3640,8 @@
 	}
 	
 	ARRAY_OBJECT{
+		Observation:
+		Link: 
 		/*
 			Cantidad de elementos
 			console.log(Object.keys(request.body).length);		
@@ -4268,6 +4418,29 @@
 		/*
 			console.time('revision');
 			console.timeEnd('revision');
+		*/
+	}
+	
+	IMG_PRELOAD{
+		Observation: Muestra la imagen cuando se carga en el 
+		/*
+			$('#imgInpEditar').change(function (e) {
+			let input = this;
+			let url = $(this).val();
+			let ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+			if (input.files && input.files[0] && (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
+				var reader = new FileReader();
+
+				reader.onload = function (e) {
+					$('#rutafotoLavado').attr('src', e.target.result);
+				}
+				reader.readAsDataURL(input.files[0]);
+			}
+			else {
+				$('#rutafotoLavado').attr('src', '/assets/no_preview.png');
+			}      
+    });
+
 		*/
 	}
 	
@@ -6061,6 +6234,54 @@
 			});		
 		*/
 	}
+
+	radio_buttoN{
+		/*
+			/**
+			 * Evento controla selección/deselección de input Radio
+			 * @param {any} elemento
+			 * @param {any} value
+			 */
+			 /*
+			function CheckUncheckRadio(elemento, value) {
+				if (elemento === 'filtrosGps') {
+					$("#" + elemento + " input[type=radio][value=" + value + "]").click(function (e) {
+						if (value === '1') {
+							$("#" + elemento + " input[type=radio][value=3]").prop("disabled", "disabled");
+						}
+						else if (value === '3') {
+							$("#" + elemento + " input[type=radio][value=1]").prop("disabled", "disabled");
+						}F
+
+						if (e.ctrlKey) {
+							$(this).prop('checked', false).change();
+						}
+					});
+
+					$("#" + elemento + " input[type=radio][value=" + value + "]").dblclick(function () {
+						if (value === '1') {
+							$("#" + elemento + " input[type=radio][value=3]").removeAttr("disabled");
+						}
+						else if (value === '3') {
+							$("#" + elemento + " input[type=radio][value=1]").removeAttr("disabled");
+						}
+						$(this).prop('checked', false).change();
+					});
+				}
+				else {
+					$("#" + elemento + " input[type=radio][value=" + value + "]").click(function (e) {
+						if (e.ctrlKey) {
+							$(this).prop('checked', false).change();
+						}
+					});
+
+					$("#" + elemento + " input[type=radio][value=" + value + "]").dblclick(function () {
+						$(this).prop('checked', false).change();
+					});
+				}    
+			}
+		*/
+	}
 }
 
 ---------------------- LINUX ------------------------{
@@ -7174,6 +7395,18 @@
 			ca: fs.readFileSync('../certificates/gd_bundle-g2-g1.crt'),
 			passphrase: PASS 
     }
+		*/
+	}
+
+	-- MATAR_PROCESO_PEGADO{
+		/*
+			-- Listamos los proceso ejecutados en el puerto del nodejs
+			netstat -ano | find ": 8187"
+			netstat -nao|findstr 8187
+			
+			-- Luego matamos el proceso y ejecutamos nodemon app.js estando dentro de la carpeta para q se cargue inmediatamente
+			taskkill /PID PID /F 
+
 		*/
 	}
 }
