@@ -7410,7 +7410,7 @@
 			1. openssl pkcs12 -in [yourfile.pfx] -nocerts -out goDaddySyspotec.key
 			2. openssl pkcs12 -in [yourfile.pfx] -clcerts -nokeys -out [drlive.crt]
 			3. openssl rsa -in [drlive.key] -out [drlive-decrypted.key]
-			4. fucionamos el blundle01y02
+			4. fucionamos el blundle01y02 (Este archivo se descarga de goDaddy)
     }
 		*/
 	}
