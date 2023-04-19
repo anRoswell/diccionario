@@ -1478,6 +1478,13 @@
 			*/
 	}	
 	
+	--NETCORE ENTITI{
+		Observation: Crear tabla en Api
+		/*
+			Scaffold-DbContext "Server=52.167.166.161;Database=CAPIWEB;persist security info=True;user id=Alfonso.Navarro;password=Cartagena2021*;MultipleActiveResultSets=True" Microsoft.EntityFrameworkCore.SqlServer -o ContenedoresPunto -Tables IOS.ContenedoresPunto -f -NoOnConfiguring -Namespace "ContenedoresPuntoDBEntitis" -Context "ContenedoresPuntoContext"
+		*/
+	}
+	
 	--PDF(ROTATIVA){
 		
 		/*
@@ -7382,6 +7389,10 @@
 		/*
 			Pasos:
 			
+			https://es.godaddy.com/help/donde-esta-mi-clave-privada-32300
+			https://www.ibm.com/docs/en/arl/9.7?topic=certification-extracting-certificate-keys-from-pfx-file
+			
+			// OJO descargar de GoDaddy el q dice APACHE
 			1. Se Solicita certificado de goDaddy
 			2. Se obtienen archivos .key, .crt y ca (En algunos casos goDaddy entrega archivo pem y toca extraer los archivos necesarios)
 			3. El archivo ca vienen siendo gd_bundle-g2-g1.crt (Bundle 01 y bundle 02)
@@ -7394,6 +7405,12 @@
 			cert: fs.readFileSync('../certificates/goDaddySyspotec.crt'),
 			ca: fs.readFileSync('../certificates/gd_bundle-g2-g1.crt'),
 			passphrase: PASS 
+			
+			Pasos para extraer
+			1. openssl pkcs12 -in [yourfile.pfx] -nocerts -out goDaddySyspotec.key
+			2. openssl pkcs12 -in [yourfile.pfx] -clcerts -nokeys -out [drlive.crt]
+			3. openssl rsa -in [drlive.key] -out [drlive-decrypted.key]
+			4. fucionamos el blundle01y02
     }
 		*/
 	}
@@ -7401,8 +7418,8 @@
 	-- MATAR_PROCESO_PEGADO{
 		/*
 			-- Listamos los proceso ejecutados en el puerto del nodejs
-			netstat -ano | find ": 8187"
-			netstat -nao|findstr 8187
+			netstat -ano | find ": 8182"
+			netstat -nao|findstr 8182
 			
 			-- Luego matamos el proceso y ejecutamos nodemon app.js estando dentro de la carpeta para q se cargue inmediatamente
 			taskkill /PID PID /F 
