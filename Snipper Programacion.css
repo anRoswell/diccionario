@@ -683,7 +683,115 @@
 		Observaciones:
 		
 		/*
-			
+			public class ElectricalProjectE4Model : IValidatableObject
+			{
+				public string IntTipoDocSol { get; set; }
+				public long LngNroDocumentoSol { get; set; }
+				public string StrNombres { get; set; }
+				public string StrDireccionSol { get; set; }
+				public int IntDeptoSol { get; set; }
+				public int IntMunicipioSol { get; set; }
+				public int IntBarrioSol { get; set; }
+				public string StrTelefono { get; set; }
+				public string StrEmailSol { get; set; }
+				public string StrCelularSol { get; set; }
+				public string StrTelefonoSol { get; set; }
+				public int IntClasificacionSol { get; set; }
+				public string StrNombreObra { get; set; }
+				public int IntDeptoObra { get; set; }
+				public int IntMunicipioObra { get; set; }
+				public string StrDireccionObra { get; set; }
+				public string StrIngResponsableObra { get; set; }
+				public string StrCelularIngResponsable { get; set; }
+				public string StrEmailIngResponsable { get; set; }
+				public string AplicaDMC { get; set; }
+				public string ObservacionDMC { get; set; }
+				public int AplicaLic { get; set; }
+				public int ObservacionLic { get; set; }
+				public string AplicaConex { get; set; }
+				public string ObservacionPer { get; set; }
+				public string AplicaCanti { get; set; }
+				public string ObservacionODoc { get; set; }
+				public string strObservacionGenerales { get; set; }
+				public string strRadicadoWeb { get; set; }
+				public int intIdentificador { get; set; }
+				public int lngCodigoCliente { get; set; }
+				public DateTime FechaSol { get; set; }
+				public int TipoSol { get; set; }
+				public int ClaseSol { get; set; }
+				public string MedioSol { get; set; }
+				public string MedioNotificacion { get; set; }
+				public string RadicadoEnt { get; set; }
+				public string TipoTramite { get; set; }
+				public string TipoRta { get; set; }
+				public string Observacion { get; set; }
+				public string NombreConstructora { get; set; }
+				[Required]
+				public string NIT { get; set; }
+				public string Estudio { get; set; }
+				public string Diseno { get; set; }
+				public string TelefonoIngRes { get; set; }
+				public string CkxDiseno { get; set; }
+				public string CkxLicencia { get; set; }
+				public string CkxPlanoLU { get; set; }
+				public string CkxPlanoAA { get; set; }
+				public string CkxAutorizaEP { get; set; }
+				public string CkxServidumbre { get; set; }
+				public string CkxPermisoIA { get; set; }
+				public string CkxLicAambiental { get; set; }
+				public string CkxCertificadoTL { get; set; }
+				public string CkxCertificadoERL { get; set; }
+				public string CkxApruebaEPF { get; set; }
+				public string CkxMatriculaPID { get; set; }
+				public string CkxDocumentoID { get; set; }
+				public string CkxDocumentoP { get; set; }
+				public string TipoPersonaSol { get; set; }
+				public string Nombre1Sol { get; set; }
+				public string Nombre2Sol { get; set; }
+				public string Apellido1Sol { get; set; }
+				public string Apellido2Sol { get; set; }
+				public List<Core.Dtos.FileUploadModel> Files { get; set; }
+
+				public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+				{
+					if(this.NIT.Length < 10)
+					{
+						yield return new ValidationResult("Menor a 10 caracteres", new[] { "NIT" });
+					}
+
+					if (this.IntTipoDocSol.Length < 10)
+					{
+						yield return new ValidationResult("Menor a 10 caracteres", new[] { "IntTipoDocSol" });
+					}
+				}
+				
+				Observaciones: 
+				if (!ModelState.IsValid)
+				{
+					var resp = Validar(ModelState);
+					return Request.CreateResponse(System.Net.HttpStatusCode.BadRequest, new { resp });
+				}
+				
+				Observaciones:
+				private List<ModelErroresGeneral> Validar(ModelStateDictionary modelState)
+				{
+					var Exception = (from x in modelState.Keys
+									 where modelState[x].Errors.Count > 0
+									 select new ModelErroresGeneral
+									 {
+										 Key = x,
+										 Message = string.Join(" | ", modelState[x].Errors.Select(y => y.ErrorMessage + (y.Exception != null ? ", Exc: " + y.Exception.Message : "")).ToArray())
+									 }).ToList();
+
+					return Exception;
+				}
+				
+				Observaciones:
+				public class ModelErroresGeneral
+				{
+					public string Key { get; set; }
+					public string Message { get; set; }
+				}
 		*/
 		
 	}
@@ -2041,6 +2149,18 @@
 
 			sudo systemctl status docker
 			
+			Comandos:
+			$ docker ps -a (veo todos los contenedores de mi máquina)
+			$ docker container prune (borra todos los contenedores inactivos)
+			$ docker rm -f $(docker ps -aq) (borra todos los contenedores que estén corriendo o apagados)
+			$ docker network ls (lista todas las redes)
+			$ docker volume ls (lista todos los volumes)
+			$ docker image ls (lista todas las imágenes)
+			$ docker system prune (borra todo lo que no se esté usando)
+			$ docker run -d --name app --memory 1g platziapp (limito el uso de memoria)
+			$ docker stats (veo cuantos recursos consume docker en mi sistema)
+			$ docker inspect app (puedo ver si el proceso muere por falta de recursos)
+			
 			
 			
 		*/
@@ -2485,7 +2605,7 @@
 		git add .
 
 		********************************************
-		******Agragar a la zona de preparación******
+		******Agregar a la zona de preparación******
 		********************************************
 
 		****************************
@@ -2509,7 +2629,7 @@
 		***************************************************************************
 
 		************************************************************
-		**********************Realizar commint**********************
+		**********************Realizar commit**********************
 		************************************************************
 
 		git commit -m "Este es el pimer commit de este archivo"
@@ -2623,6 +2743,56 @@
 		****************************************************
 		************Traer un repositorio externo************
 		****************************************************
+		
+		******************************************************************************
+		Si el Importador GitHub no es adecuado para sus fines, por ejemplo si el código existente está hospedado en una red privada, se recomienda realizar la importación mediante la línea de comandos.
+
+		Antes de comenzar, asegúrate de saber lo siguiente:
+
+		El nombre de usuario de GitHub
+		La dirección URL de clonación del repositorio externo, como https://external-host.com/user/repo.git o git://external-host.com/user/repo.git (quizás con un elemento user@ delante del nombre de dominio external-host.com)
+		A los fines de demostración, usaremos lo siguiente:
+
+		Una cuenta externa denominada extuser
+		Un host de Git externo denominado https://external-host.com
+		Una cuenta de usuario personal de GitHub denominada ghuser
+		Un repositorio en GitHub.com denominado repo.git
+		Siga los pasos que se indican a continuación para importar el repositorio externo:
+
+		1. Crear un repositorio nuevo en GitHub. Importarás tu repositorio de Git externo a este repositorio nuevo.
+
+		2. En la línea de comando, haz un clon "en blanco" del repositorio usando la URL del clon externo. Esto crea una copia completa de los datos, pero sin un directorio de trabajo para editar archivos, y asegura una exportación limpia y nueva de todos los datos antiguos.
+		
+		$ git clone --bare https://external-host.com/extuser/repo.git
+			#Makes a bare clone of the external repository in a local directory
+		
+		3. Suba el repositorio clonado de forma local a GitHub usando la opción "mirror", que asegura que todas las referencias, como ramas y etiquetas, se copien en el repositorio importado.
+		
+			$ cd repo.git
+			$ git push --mirror https://github.com/ghuser/repo.git
+			#Pushes the mirror to the new repository on GitHub.com
+		
+		4. Elimina el repositorio local temporal.
+		
+			$ cd ..
+			$ rm -rf repo.git
+			
+		*************************************************************************
+		Reorganización del historial con la fusión mediante cambio de base de Git
+		El comando git rebase (o git pull --rebase) vuelve a escribir el historial de la rama para usar como base la confirmación HEAD actual de la rama base. En otras palabras, 
+		actualiza la rama para que se comporte como si solo se hubiera bifurcado a partir del estado actual de la rama base. 
+		Esto significa que todos los cambios se compararán con el estado más reciente de la rama base, y no con la confirmación original a partir de la que se bifurcó originalmente. 
+		Esto puede hacer que sea mucho más fácil realizar un seguimiento del historial después de la combinación final, 
+		ya que las confirmaciones seguirán las confirmaciones paralelas anteriores de manera lineal. 
+		Es recomendable fusionar la rama mediante cambio de base inmediatamente antes de realizar una combinación ascendente.
+		
+		https://help.github.com/github/using-git/about-git-rebase
+		https://help.github.com/github/using-git/resolving-merge-conflicts-after-a-git-rebase
+
+		Obtenga más información sobre la fusión mediante cambio de base de Git y la resolución de conflictos de combinación después de una fusión mediante cambio de base de Git.
+		
+		
+		
 	*/
 }
 
@@ -6870,6 +7040,50 @@
 		*/
 	}
 
+	--MANEJO ERORRES{
+		OBSERVACIONES: 
+		/*
+			SET @strSQL = 'SELECT '+ 
+			'	Ruta,  '+
+			'	Orden,  '+
+			'	Movil,    '+
+			'	KilometroInicial, '+
+			'	KilometroInicialRuta, '+
+			'	KilometroInicialRelleno, '+
+			'	ISNULL(KilometroFInal, '+
+			'   ISNULL(KilometroFinalRuta,KilometroFinalRelleno)) as KilometroFinal , '+
+			'	ISNULL(HorometroInicial,0) as HorometroInicial, '+
+			'	ISNULL(HorometroFInal,0) as HorometroFinal, '+
+			' FORMAT(CAST(fechaProduccion AS DATE),''dd/MM/yyyy'') AS FechaProduccion,  '+
+			'	Comentario,    '+
+			'	EstadoRelleno    '+
+			'	 FROM [dbo].[OperacionHistoricos] cph (nolock)'+
+			'    JOIN [dbo].ViewEmpresas Ag '+
+			'      ON cph.IdEmpresa = Ag.CodigoEmpresa '+
+			'	WHERE Ag.CodCiudad = '''+@CodCiudad+''' '+
+			'	  AND KilometroInicial IS NOT NULL '+
+			'     AND KilometroInicial NOT IN (''1'') '+
+			'     AND CONVERT(DATE,fechaProduccion) BETWEEN CONVERT(DATE,'''+CAST(@FechaIni AS VARCHAR(20))+''')  '+
+			'     AND CONVERT(DATE,'''+CAST(@FechaFin AS VARCHAR(20))+''')';
+			 
+			 ---PRINT @strSQL;
+			if(@Movil!='-1')
+			BEGIN
+				SET @strSQL = @strSQL + ' WHERE Movil = '''+@Movil+'''  ';
+			END
+
+			IF(@Ruta!='-1')
+			BEGIN
+			  SET @strSQL = @strSQL + ' WHERE Ruta = '''+@Ruta+'''  ';
+			END
+
+			SET @strSQL = @strSQL + ' ORDER BY cph.FechaProduccion,cph.Movil  ';
+
+			print @strSQL
+			EXECUTE sp_executesql  @strSQL ;
+		*/
+	}
+
 	--CREAR_VISTA{
 		Origen: Platzi
 		Url: https://platzi.com/clases/2179-optimizacion-sql-server/34244-como-funcionan-las-vistas/
@@ -7401,28 +7615,35 @@
 			Quedando de la sgte manera:
 			
 			const httpsOptions = {
-			key: fs.readFileSync('../certificates/goDaddySyspotec.key'),
-			cert: fs.readFileSync('../certificates/goDaddySyspotec.crt'),
-			ca: fs.readFileSync('../certificates/gd_bundle-g2-g1.crt'),
-			passphrase: PASS 
+				key: fs.readFileSync('../certificates/goDaddySyspotec.key'),
+				cert: fs.readFileSync('../certificates/goDaddySyspotec.crt'),
+				ca: fs.readFileSync('../certificates/gd_bundle-g2-g1.crt'),
+				passphrase: PASS 
+				
+				Pasos para extraer
+				1. openssl pkcs12 -in [yourfile.pfx] -nocerts -out goDaddySyspotec.key           => openssl pkcs12 -in syspo25.pfx -nocerts -out goDaddySyspotec.key
+				2. openssl pkcs12 -in [yourfile.pfx] -clcerts -nokeys -out [goDaddySyspotec.crt] => openssl pkcs12 -in syspo25.pfx -clcerts -nokeys -out goDaddySyspotec.crt
+				3. openssl rsa -in [goDaddySyspotec.key] -out [goDaddySyspotec-decrypted.key]    => openssl rsa -in goDaddySyspotec.key -out goDaddySyspotec-decrypted.key
+				4. fucionamos el blundle01y02 (Este archivo se descarga de goDaddy)
+			}
 			
-			Pasos para extraer
-			1. openssl pkcs12 -in [yourfile.pfx] -nocerts -out goDaddySyspotec.key
-			2. openssl pkcs12 -in [yourfile.pfx] -clcerts -nokeys -out [drlive.crt]
-			3. openssl rsa -in [drlive.key] -out [drlive-decrypted.key]
-			4. fucionamos el blundle01y02 (Este archivo se descarga de goDaddy)
-    }
+			OTRA OPCION ES
+				
+			const httpsOptions = {
+				pfx: fs.readFileSync('../certificates/syspo25.pfx'),
+				passphrase: 'Ch4v1t420240213*'
+			};
 		*/
 	}
 
 	-- MATAR_PROCESO_PEGADO{
 		/*
 			-- Listamos los proceso ejecutados en el puerto del nodejs
-			netstat -ano | find ": 8182"
-			netstat -nao|findstr 8182
+			netstat -ano | find ": 8185"
+			netstat -nao|findstr 8185
 			
 			-- Luego matamos el proceso y ejecutamos nodemon app.js estando dentro de la carpeta para q se cargue inmediatamente
-			taskkill /PID PID /F 
+			taskkill /PID 8194 /F 
 
 		*/
 	}
