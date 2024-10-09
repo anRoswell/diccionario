@@ -2003,6 +2003,221 @@
 			
 		*/
 	}
+
+	--ELASTIC_SEARCH{
+		/*
+			### Appsetting ###
+			"ElasticConfig": {
+				"Enabled": true,
+				"Url": "http://10.10.30.85:9200",
+				"IndexFormat": "logs-op360-obras-{0:yyyy.MM.dd}"
+			},
+			"Serilog": {
+				"Using": [ "Serilog.Sinks.Elasticsearch", "Serilog.Sinks.Console" ],
+				"MinimumLevel": "Information",
+				"WriteTo": [
+					{
+						"Name": "Elasticsearch",
+						"Args": {
+							"nodeUris": "http://10.10.30.85:9200",
+							"indexFormat": "logs-{0:yyyy.MM.dd}",
+							"autoRegisterTemplate": true,
+							"batchSizeLimit": 500,
+							"connectionTimeout": 30,
+							"bufferSizeLimit": 1000,
+							"numberOfShards": 20,
+							"numberOfReplicas": 10,
+							"typeName": "_doc",
+							"templateName": "Prueba Template"
+						}
+					},
+					{
+						"Name": "Console"
+					}
+				],
+				"Enrich": [ "FromLogContext", "WithMachineName" ],
+				"Properties": {
+					"Application": "OP360_Backend_Obras"
+				}
+			}
+
+			### Paquetes de Infrastructure ### Dentro del <ItemGroup> donde estan los paquetes
+			<PackageReference Include="Serilog.AspNetCore" Version="6.0.1" />
+			<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+			<PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
+			<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+			<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+			<PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
+
+			### SeviceCollection ###
+			public static IServiceCollection AddElasticLogging(this IServiceCollection services, IConfiguration configuration, string environment)
+			{
+				ConfigureLogging(configuration, environment);
+
+				return services;
+			}
+
+			public static void ConfigureLogging(IConfiguration configuration, string environment)
+			{
+				// Configurar Serilog
+				Log.Logger = new LoggerConfiguration()
+					//.Enrich.WithElasticApmCorrelationInfo()
+					.Enrich.FromLogContext()
+					.Enrich.WithExceptionDetails()
+					.MinimumLevel.Debug()
+					//.MinimumLevel.Verbose()
+					.WriteTo.Debug()
+					.WriteTo.Console(new ElasticsearchJsonFormatter())
+					.WriteTo.Elasticsearch(ConfigureElasticSink(configuration))
+					.Enrich.WithProperty("Environment", environment)
+					.ReadFrom.Configuration(configuration)
+					.CreateLogger();
+			}
+
+			public static ElasticsearchSinkOptions ConfigureElasticSink(IConfiguration configuration)
+			{
+				string urlElastic = configuration["ElasticConfig:Url"];
+				//string templateName = $"{Assembly.GetExecutingAssembly().GetName().Name.ToLower().Replace(".", "-")}-{environment.ToLower()}-{DateTime.UtcNow:yyyy-MM}";
+
+				return new ElasticsearchSinkOptions(new Uri(urlElastic))
+				{
+					AutoRegisterTemplate = true,
+					IndexFormat = "logs-op360-obras-{0:yyyy.MM.dd}",
+					//IndexFormat = templateName,
+					NumberOfReplicas = 1,
+					NumberOfShards = 2,
+					//CustomFormatter = new EcsTextFormatter()
+					CustomFormatter = new ExceptionAsObjectJsonFormatter(renderMessage: true)
+				};
+			}
+
+			### GlobalExceptionFilter ###
+			public class GlobalExceptionFilter : IAsyncExceptionFilter
+			{
+				private readonly ILogErroresService _logErroresService;
+				private readonly ILogger<GlobalExceptionFilter> _logger;
+
+				public GlobalExceptionFilter(ILogErroresService logErroresService, ILogger<GlobalExceptionFilter> logger)
+				{
+					_logErroresService = logErroresService;
+					_logger = logger;
+				}
+
+				public async Task OnExceptionAsync(ExceptionContext context)
+				{
+					if (context.Exception.GetType() == typeof(BusinessException))
+					{                
+						var controllerActionDescriptor = context.ActionDescriptor as ControllerActionDescriptor;
+						string controllerName = controllerActionDescriptor?.ControllerName;
+						string actionMethod = controllerActionDescriptor?.ActionName;
+						var routeData = string.Join(", ", context.HttpContext.Request.RouteValues.Select(kv => $"{kv.Key}: {kv.Value}"));
+						var queryParameters = string.Join(", ", context.HttpContext.Request.Query.Select(kv => $"{kv.Key}: {kv.Value}"));
+						string requestBody;
+						using (StreamReader reader = new(context.HttpContext.Request.Body, Encoding.UTF8))
+						{
+							requestBody = await reader.ReadToEndAsync();
+						}
+
+						var exception = (BusinessException)context.Exception;
+						var exceptionMessage = $"Message: {exception.Message}{(string.IsNullOrWhiteSpace(exception.Message) ? "N/A" : " - StackTrace: " + exception.StackTrace)}{(exception.InnerException != null ? " - InnerException: " + exception.InnerException.Message : "")}";
+						string user = context.HttpContext.Items.ContainsKey("UserID") ? context.HttpContext.Items["UserID"]?.ToString() : "0";
+
+						// Registramos el error en la Base de Datos
+						ResponseAction logSaved = await _logErroresService.SaveError(new LogErrores() {
+							Controlador = controllerName,
+							Descripcion = $"{exceptionMessage} - Route: {(string.IsNullOrWhiteSpace(routeData) ? "N/A" : routeData)} - Query: {(string.IsNullOrWhiteSpace(queryParameters) ? "N/A" : queryParameters)} - Body: {(string.IsNullOrWhiteSpace(requestBody) ? "N/A" : requestBody)}",
+							Origen = "C#",
+							Usuario = user,
+							Funcion = actionMethod
+						});
+
+						_logger.LogError(exception.Message);
+
+						ResponseAction resp;
+
+						if (logSaved != null)
+						{
+							if (logSaved.estado)
+							{
+								// Armamos respuesta al front
+								resp = new ResponseAction
+								{
+									estado = false,
+									error = exception.Message,
+									mensaje = "Error interno del sistema" // Mensaje para el usuario
+								};
+							}
+							else
+							{
+								// Armamos respuesta al front
+								resp = new ResponseAction
+								{
+									estado = logSaved.estado,
+									error = logSaved.error,
+									mensaje = "Error interno del sistema.",
+									codigo_error = logSaved.codigo_error
+								};
+							}
+						}
+						else
+						{
+							// Armamos respuesta al front
+							resp = new ResponseAction
+							{
+								estado = false,
+								error = "No se pudo guardar log de errores en la base de datos",
+								mensaje = "Error interno del sistema." // Mensaje para el usuario
+							};
+						}
+
+						// Armamos respuesta al front y la enviamos
+						var validation = new
+						{
+							Status = 400,
+							Errors = new[] { resp }
+						};
+
+						context.Result = new BadRequestObjectResult(validation);
+						context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+						context.ExceptionHandled = true;
+					}
+					else if (context.Exception.GetType() == typeof(Exception))
+					{
+						var exception = context.Exception;
+						_logger.LogError(exception.Message);
+					}
+				}
+			}
+
+			### Program ###
+
+			_ = bool.TryParse(builder.Configuration["ElasticConfig:Enabled"], out bool isEnabledElastic);
+
+			SetElasticSerilog();
+
+			if (isEnabledElastic)
+			{
+				// Para registrar cada solicitud HTTP
+				app.UseSerilogRequestLogging();
+			}
+
+			void SetElasticSerilog()
+			{
+				string environment = builder.Environment.EnvironmentName;
+				string appsettingFile = $"appsettings.{environment}.json";
+
+				builder.Configuration.AddJsonFile(appsettingFile, optional: true, reloadOnChange: true);
+
+				if (isEnabledElastic)
+				{
+					builder.Services.AddElasticLogging(builder.Configuration, environment);
+
+					// Reemplazar el Logger por defecto con Serilog
+					builder.Host.UseSerilog();
+				}
+			}
+		*/
+	}
 }
 
 ---------------------- CSS --------------------------{
@@ -3773,6 +3988,23 @@
 				})
 				return await modalShow.present()
 			}
+		*/
+	}
+
+	GENERAR_APK{
+		/*
+			// Generamos archivos para development o qa dependiendo de la necesidad
+			$ ionic build&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => development
+			$ ionic build --qa => QA
+
+			// Syncronizamos archivos 
+			$ ionic npx cap sync
+
+			// Ingresamos a la carpeta Android
+			$ cd android
+
+			// Generar por consola
+			$ ./gradlew assembleDebug
 		*/
 	}
 }
